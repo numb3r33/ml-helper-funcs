@@ -9,6 +9,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.feature_selection import f_classif
+from sklearn.svm import l1_min_c
 
 def create_dataset():
 	X, y = make_blobs(n_samples=5000, n_features=100, centers=2, cluster_std=10, random_state=241)
@@ -61,6 +62,26 @@ def plot_feature_importance(var_imp):
 	plt.plot(sorted(var_imp))
 	plt.show()
 
+def get_C_grid(X, y):
+	c_grid = l1_min_c(X, y, loss='log') * np.logspace(0, 3, 100)
+	return c_grid
+
+def prediction_quality(X, y):
+	X_train, X_test, y_train, y_test = split_examples(X, y)
+	n_features = []
+	quality = []
+	
+	c_grid = get_C_grid(X_train, y_train)
+
+	for c in c_grid:
+		clf = LogisticRegression(penalty='l1', C=c)
+		clf.fit(X_train, y_train)
+		q = roc_auc_score(y_test, clf.predict_proba(X_test)[:, 1])
+		quality.append(q)
+		n_features.append(np.sum(clf.coef_ > 0))
+	
+	return quality, n_features
+
 if __name__ == '__main__':
 	X, y = create_dataset()
 	low_var_idx = get_low_variance_features_index(X)
@@ -76,3 +97,10 @@ if __name__ == '__main__':
 	imp_feature_idx = feature_selection(X, y)
 	plot_feature_importance(imp_feature_idx)
 	
+	quality, n_features = prediction_quality(X, y)
+	
+	plt.plot(n_features, quality)	
+	plt.xlabel('Num features with non zero coefficient values')
+	plt.ylabel('Quality of the prediction')
+	plt.show()
+
