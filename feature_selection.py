@@ -120,6 +120,19 @@ def ensemble_learning(X, y):
 	
 	return clf.feature_importances_
 
+def feature_importance_plots(feature_importances, len_X):
+	start = 0
+	step = 50
+	
+	while start < len_X:
+		sel = np.arange(start, min(start + step, len_X))
+		plt.figure(figsize=(17, 3))
+		plt.bar(sel, feature_importances[sel])
+		plt.ylabel('Importance')
+		start += step
+	
+	plt.show()
+
 if __name__ == '__main__':
 	X, y = create_dataset()
 	low_var_idx = get_low_variance_features_index(X)
@@ -147,4 +160,6 @@ if __name__ == '__main__':
 	
 	# ensemble learning
 	feature_importances_ = ensemble_learning(X, y)
-
+	
+	# plot feature importances obtained from Random Forest Classifier	
+	feature_importance_plots(feature_importances_, X.shape[1])
