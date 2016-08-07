@@ -11,6 +11,7 @@ from sklearn.linear_model import LogisticRegression, RandomizedLogisticRegressio
 from sklearn.metrics import roc_auc_score
 from sklearn.feature_selection import f_classif
 from sklearn.svm import l1_min_c
+from sklearn.ensemble import RandomForestClassifier
 
 def create_dataset():
 	X, y = make_blobs(n_samples=5000, n_features=100, centers=2, cluster_std=10, random_state=241)
@@ -107,6 +108,18 @@ def lasso_regression(X, y):
 	
 	return qualities
 
+def ensemble_learning(X, y):
+	"""
+	Fit Random Forest Classifier and use variable importance
+	"""
+	clf = RandomForestClassifier(n_estimators=100)
+	clf.fit(X, y)
+	
+	plt.bar(range(100), clf.feature_importances_)
+	plt.show()
+	
+	return clf.feature_importances_
+
 if __name__ == '__main__':
 	X, y = create_dataset()
 	low_var_idx = get_low_variance_features_index(X)
@@ -128,6 +141,10 @@ if __name__ == '__main__':
 	plt.xlabel('Num features with non zero coefficient values')
 	plt.ylabel('Quality of the prediction')
 	plt.show()
-
+	
+	# Lasso Regression for feature selection
 	qualities = lasso_regression(X, y)
+	
+	# ensemble learning
+	feature_importances_ = ensemble_learning(X, y)
 
