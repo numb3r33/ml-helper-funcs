@@ -1,12 +1,13 @@
 """
 Feature Selection in case of anonymized features.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import make_blobs
 from sklearn.cross_validation import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RandomizedLogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.feature_selection import f_classif
 from sklearn.svm import l1_min_c
@@ -27,7 +28,6 @@ def plot_histogram(X, low_var_idx, index):
 	plt.hist(X[:, low_var_idx[index]], bins=100)
 	plt.xlabel('Feature with low variance')
 	plt.show()
-	plt.savefig('./feature_histogram.png')
 
 def count_non_zero_variance_features(X, low_var_idx, index):
 	return np.sum(X[:, low_var_idx[index]] > 0)
@@ -82,6 +82,31 @@ def prediction_quality(X, y):
 	
 	return quality, n_features
 
+def lasso_regression(X, y):
+	"""
+	Use Randomized Logistic Regression to select the features based on the coefficient values
+	"""
+
+	clf = RandomizedLogisticRegression(C=1.0)
+	clf.fit(X, y)
+	print('Number of non zero valued coefficients: ', np.sum(clf.scores_ > 0))
+	imp_feature_idx = clf.scores_.argsort()
+	
+	qualities = []
+	
+	X_train, X_test, y_train, y_test = split_examples(X, y)
+	
+	for i in range(0, 100, 4):
+		clf = LogisticRegression(C=0.1)
+		clf.fit(X_train[:, imp_feature_idx[i:]], y_train)
+		q = roc_auc_score(y_test, clf.predict_proba(X_test[:, imp_feature_idx[i:]])[:, 1])
+		
+		qualities.append(q)
+	plt.plot(range(0, 100, 4), qualities)
+	plt.show()
+	
+	return qualities
+
 if __name__ == '__main__':
 	X, y = create_dataset()
 	low_var_idx = get_low_variance_features_index(X)
@@ -103,4 +128,6 @@ if __name__ == '__main__':
 	plt.xlabel('Num features with non zero coefficient values')
 	plt.ylabel('Quality of the prediction')
 	plt.show()
+
+	qualities = lasso_regression(X, y)
 
